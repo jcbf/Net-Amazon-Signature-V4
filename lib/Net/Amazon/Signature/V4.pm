@@ -220,10 +220,11 @@ sub _sort_query_string {
 		sort { ( $a->[0] cmp $b->[0] ) || ( $a->[1] cmp $b->[1] ) }
 		@params;
 }
+# https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
 # The Trimall function removes excess white space before and after values,
 # and converts sequential spaces to a single space.
 sub _trim_whitespace {
-	return map { my $str = $_; $str =~ s/^\s*//; $str =~ s/\s*$//; $str } @_;
+	return map { my $str = $_; $str =~ s/\s*\n\s*/,/mg; $str =~ s/\s+/ /g; $str =~ s/^\s*//; $str =~ s/\s*$//; $str } @_;
 }
 sub _str_to_timepiece {
 	my $date = shift;
