@@ -9,6 +9,7 @@ use Time::Piece ();
 use URI::Escape;
 
 our $ALGORITHM = 'AWS4-HMAC-SHA256';
+our $ADD_CONTENT_SHA256 = 1;
 
 =head1 NAME
 
@@ -105,7 +106,9 @@ sub _canonical_request {
 	if (!$creq_payload_hash) {
 		$creq_payload_hash = sha256_hex($req->content);
 		# X-Amz-Content-Sha256 must be specified now
-		$req->header('X-Amz-Content-Sha256' => $creq_payload_hash);
+		if ($ADD_CONTENT_SHA256) {
+			$req->header('X-Amz-Content-Sha256' => $creq_payload_hash);
+		}
 	}
 
 	# There's a bug in AMS4 which causes requests without x-amz-date set to be rejected
