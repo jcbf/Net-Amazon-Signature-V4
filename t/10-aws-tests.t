@@ -6,9 +6,15 @@ use Net::Amazon::Signature::V4;
 use File::Slurper 'read_text';
 use HTTP::Request;
 use Test::More;
+use File::Find;
 
-my $testsuite_dir = 't/aws4_testsuite';
-my @test_names = qw/get-header-key-duplicate get-header-value-order get-header-value-trim get-relative get-relative-relative get-slash get-slash-dot-slash get-slashes get-slash-pointless-dot get-space get-unreserved get-utf8 get-vanilla get-vanilla-empty-query-key get-vanilla-query get-vanilla-query-order-key get-vanilla-query-order-key-case get-vanilla-query-order-value get-vanilla-query-unreserved get-vanilla-ut8-query post-header-key-case post-header-key-sort post-header-value-case post-vanilla post-vanilla-empty-query-value post-vanilla-query post-vanilla-query-nonunreserved post-vanilla-query-space post-x-www-form-urlencoded post-x-www-form-urlencoded-parameters/; # all tests
+my $testsuite_dir = 't/aws4_testsuite_20150830';
+my @test_names = ();
+
+sub crate_test_names;
+
+File::Find::find({wanted => \&crate_test_names}, $testsuite_dir);
+
 # only .req is supplied for test "get-header-value-multiline"; why?
 
 plan tests =>  1+4*@test_names;
@@ -17,16 +23,19 @@ my $sig = Net::Amazon::Signature::V4->new(
 	'AKIDEXAMPLE',
 	'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
 	'us-east-1',
-	'host',
+	'service',
 );
 
 ok( -d $testsuite_dir, 'testsuite directory existence' );
+$Net::Amazon::Signature::V4::ADD_CONTENT_SHA256 = 0;
 
 for my $test_name ( @test_names ) {
 
 	ok( -f "$testsuite_dir/$test_name.req", "$test_name.req existence" );
-	my $req = HTTP::Request->parse( read_text( "$testsuite_dir/$test_name.req" ) );
-
+	my $reqtext = read_text( "$testsuite_dir/$test_name.req" );
+	my $req = HTTP::Request->parse( $reqtext);
+	# Fix HTTP::Request bug when parsing requests with spaces in uri path
+	$req->uri($1) if ($reqtext =~ /^[A-Z]+ (.*) HTTP\b/s);
 	#diag("$test_name creq");
 	my $creq = $sig->_canonical_request( $req );
 	if ( ! string_fits_file( $creq, "$testsuite_dir/$test_name.creq" ) ) {
@@ -44,6 +53,7 @@ for my $test_name ( @test_names ) {
 
 	#diag("$test_name authz");
 	my $authz = $sig->_authorization( $req );
+	$authz=~ s/,Sign/, Sign/g;
 	string_fits_file( $authz, "$testsuite_dir/$test_name.authz" );
 }
 
@@ -54,3 +64,7 @@ sub string_fits_file {
 	is( $str, $expected_str, $expected_path );
 	return $str eq $expected_str;
 }
+sub crate_test_names {
+    $File::Find::name =~ /^$testsuite_dir\/(.*)\.req\z/s && push (@test_names,$1);
+}
+
