@@ -118,11 +118,14 @@ sub _canonical_request {
 		$req->header('X-Amz-Date' => _req_timepiece($req)->strftime('%Y%m%dT%H%M%SZ'));
 	}
 	my @sorted_headers = _headers_to_sign( $req );
+	# https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
+	# Append a comma-separated list of values for that header. Do not sort the values in
+	# headers that have multiple values.
 	my $creq_canonical_headers = join '',
 		map {
 			sprintf "%s:%s\x0a",
 				lc,
-				join ',', sort {$a cmp $b } _trim_whitespace($req->header($_) )
+				join ',', _trim_whitespace($req->header($_) ) # don't sort values
 		}
 		@sorted_headers;
 	my $creq_signed_headers = join ';', map {lc} @sorted_headers;
