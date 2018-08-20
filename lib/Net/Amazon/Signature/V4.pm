@@ -180,7 +180,7 @@ Maintained by Dan Book, C<< <dbook at cpan.org> >>
 
 =cut
 
-# https://github.com/aws/aws-sdk-java-v2/blob/a9387dcb384ef8d62e022483d7a10635f891d618/utils/src/main/java/software/amazon/awssdk/utils/http/SdkHttpUtils.java#L41
+# https://github.com/aws/aws-sdk-java-v2/blob/a9387dcb384ef8d62e022483d7a10635f891d618/utils/src/main/java/software/amazon/awssdk/utils/http/SdkHttpUtils.java#L126
 
 sub _aws_uri_escape {
 	my $elem = uri_escape(shift);
